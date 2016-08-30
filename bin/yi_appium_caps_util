@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'yi_appium_caps_util'
+
+action = 'help'
+
+options = {}
+
+OptionParser.new do |opts|
+  opts.banner = "You.i Utility for appium.txt capabilities"
+  puts opts.banner
+
+  opts.on("-u", "--update", "update device ID and IP address") do
+    options[:update] = true
+  end
+  opts.on("-fFILE", "--file FILE", "capabilities path and file name (default: ./appium.txt)") do |f|
+    options[:file] = f
+  end
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+end.parse!
+
+if options[:update] == true
+  if options[:file] == nil
+    YiAppiumCapsUtil.update
+  else
+    YiAppiumCapsUtil.update(options[:file])
+  end
+end
