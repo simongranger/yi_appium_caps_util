@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
-require 'yi_appium_caps_util'
+require_relative '../lib/yi_appium_caps_util.rb'
 
 action = 'help'
 

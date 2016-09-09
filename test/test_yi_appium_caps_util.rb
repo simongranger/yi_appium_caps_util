@@ -110,13 +110,6 @@ class YiAppiumCapsUtilTest < Minitest::Test
       assert(output_data['caps']['youiEngineAppAddress'] =! nil)
   end
 
-  def test_valid_device_id
-    bad_device_id = '2341345'
-    good_device_id = '30044d90e35c6200'
-    assert(!(valid_device_id?(bad_device_id)))
-    assert(valid_device_id?(good_device_id))
-  end
-
   def test_android_valid_device_id
     parsed_data = {"caps"=>{"app"=>"",
       "automationName"=>"",
@@ -196,7 +189,7 @@ class YiAppiumCapsUtilTest < Minitest::Test
   end
 
   def valid_device_id?(device)
-    if /\b([a-f0-9]{16})\b/ =~ device
+    if /[\w]+/ =~ device
       return true
     end
     return false
