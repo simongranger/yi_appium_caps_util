@@ -1,10 +1,13 @@
 require "ipaddress"
+require 'socket'
 require 'toml'
 
 class YiAppiumCapsUtil
   class << self
     public
     def update (caps_file_name = './appium.txt')
+
+      raise "appium.txt file is missing" if not File.file?(caps_file_name)
 
       #Read capability file
       parsed_data = TOML.load_file(caps_file_name)
@@ -22,6 +25,7 @@ class YiAppiumCapsUtil
     end
 
     private
+
     def run_update(parsed_data)
       #Make a copy of the parsed data
       output_data = Marshal.load(Marshal.dump(parsed_data))
@@ -66,21 +70,23 @@ class YiAppiumCapsUtil
       #Replace value of youiEngineAppAddress
       output_data['caps']['youiEngineAppAddress'] = new_address[0]
       puts 'IP address: ' + new_address[0]
-      rescue RuntimeError => ex
-        puts ex.message
-        raise
-      rescue Exception => ex
-        puts "An error of type #{ex.class} happened, message is #{ex.message}"
-        raise
+    rescue RuntimeError => ex
+      puts ex.message
+      raise
+    rescue Exception => ex
+      puts "An error of type #{ex.class} happened, message is #{ex.message}"
+      raise
     end
 
     def update_ios_caps (output_data)
       puts 'Looking for iOS device'
       #Get the device UDID
-      new_udid = `instruments -s devices | grep -E '[a-zA-Z0-9]{5}[a-zA-Z0-9]{15}' | cut -d '[' -f 2 | cut -d ']' -f 1`
+      new_udid = %x[idevice_id -l]
       #Remove whitespace
       new_udid = new_udid.strip
+
       raise "No Devices found / attached." if (new_udid == '')
+
       #Replace value of udid
       output_data['caps']['udid'] = new_udid
       puts 'udid: ' + new_udid
@@ -90,25 +96,94 @@ class YiAppiumCapsUtil
         puts 'Skiping IP check since skipYouiEngineAppAddress is present in appium.txt'
       else
         puts 'Searching for IP, this may take a few seconds...'
-        #Get mac address of iOS device
-        mac_address = `ideviceinfo -k WiFiAddress`
+        #get mac address of iOS device
+        mac_address = %x[ideviceinfo -k WiFiAddress]
+
+        #prepare string
         raise "Could not retrieve device Information. Make sure that this computer is trusted by the device." if !$?.success?
-        #Prepare string
-        ip_address_string = `#{'arp -a | grep ' + mac_address}`
-        raise "Could not retrieve IP ." if (ip_address_string == "")
-        #Extract IP from string
-        new_ip_address = IPAddress::IPv4::extract ip_address_string
+        mac_address.gsub!(/0([[:alnum:]])/, '0?\1')
+        mac_address.gsub!("\n","")
+
+        $ip_address_string = ""
+        #Check arp cache first
+        puts "Looking in arp cache first"
+        $ip_address_string = %x[arp -na | egrep #{mac_address}]
+        if ($ip_address_string == "")
+          puts "Device not in arp cache."
+
+          begin
+            broadcast_ip = %x[ifconfig].scan(/broadcast ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/)
+
+            puts "Sending broadcast on your connected network. This assumes that your device is on the same local network as this computer."
+            subnets = []
+            broadcast_ip.uniq.each do |addr|
+              puts "Sending broadcast to " + addr[0].to_s
+              temp_subnets = %x[ping -c 10  #{addr[0].to_s}]
+              subnets += temp_subnets.scan(/([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\.[0-9]{1,3}/).uniq
+            end
+            puts "Broadcast done"
+          rescue Exception => ex
+            puts "Skipping ping broadcast."
+          end
+
+          begin
+            nmap_available = %x[nmap -h]
+            puts "Forcing ARP to refresh. This assumes that your device is on the same local network as this computer."
+            subnets.uniq.each do |ip|
+              puts "Sending nmap broadcast on " + ip[0].to_s
+              %x[nmap -sP #{ip[0].to_s}0/24]
+
+              $ip_address_string = get_arp_table(mac_address)
+              if ($ip_address_string != "")
+                break
+              end
+            end
+            puts "Nmap broadcast done"
+          rescue Exception => ex
+            puts "Skipping nmap broadcast. Nmap is not installed. It can be downloaded from: https://nmap.org/download.html"
+            # Nmap not installed. Let's try arp before giving up
+            $ip_address_string = get_arp_table(mac_address)
+          end
+
+          raise "Could not retrieve IP. Please ensure that:\n1) Device is set to never sleep (General Settings-> Auto-Lock-> Never.\n2) Device is on the same network as this computer." if $ip_address_string == ""
+        end
+
+        #extract ip from string
+        new_ip_address = IPAddress::IPv4::extract $ip_address_string
         #Replace value of udid
         output_data['caps']['youiEngineAppAddress'] = new_ip_address.to_s
         puts 'IP Address: ' + new_ip_address.to_s
       end
-      rescue RuntimeError => ex
-        puts ex.message
-        raise
-      rescue Exception => ex
-        puts "An error of type #{ex.class} happened, message is #{ex.message}"
-        raise
+
+    rescue Exception => ex
+      puts "An error of type #{ex.class} happened, message is #{ex.message}"
+      exit
+    end
+
+    def get_arp_table(mac_address)
+
+      $i = 1
+      $num = 5
+      puts Time.now.strftime("%Y-%m-%d %H:%M:%S") + " Trying to get arp table. Try " + $i.to_s
+      begin
+        ip_address_string = %x[arp -a | egrep #{mac_address}]
+        $i +=1
+        raise "" if (ip_address_string == "")
+        return ip_address_string
+      rescue
+        if ($i <= $num)
+          sleep_increment = 15
+          sleep_time = sleep_increment*(1)
+          puts Time.now.strftime("%Y-%m-%d %H:%M:%S") + " Try "+ $i.to_s + ". Sleeping " + sleep_time.to_s + " seconds before next arp attempt."
+          sleep sleep_time
+          retry
+        else
+
+          return ""
+
+        end
       end
+    end
 
     def write_caps(caps_file_name, output_data)
       #Write the new caps to file
