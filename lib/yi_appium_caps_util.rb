@@ -96,93 +96,29 @@ class YiAppiumCapsUtil
         puts 'Skiping IP check since skipYouiEngineAppAddress is present in appium.txt'
       else
         puts 'Searching for IP, this may take a few seconds...'
-        #get mac address of iOS device
-        mac_address = %x[ideviceinfo -k WiFiAddress]
 
-        #prepare string
-        raise "Could not retrieve device Information. Make sure that this computer is trusted by the device." if !$?.success?
-        mac_address.gsub!(/0([[:alnum:]])/, '0?\1')
-        mac_address.gsub!("\n","")
+        #https://github.com/LorneFlindall/getIP
+        myAppFolder = File.dirname(__FILE__) + "/../app/"
+        myApp = myAppFolder + "getIP.app"
+        myZipApp = myAppFolder + "getIP.app.zip"
+        %x[unzip -o #{myZipApp} -d #{myAppFolder}]
 
-        $ip_address_string = ""
-        #Check arp cache first
-        puts "Looking in arp cache first"
-        $ip_address_string = %x[arp -na | egrep #{mac_address}]
-        if ($ip_address_string == "")
-          puts "Device not in arp cache."
-
-          begin
-            broadcast_ip = %x[ifconfig].scan(/broadcast ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/)
-
-            puts "Sending broadcast on your connected network. This assumes that your device is on the same local network as this computer."
-            subnets = []
-            broadcast_ip.uniq.each do |addr|
-              puts "Sending broadcast to " + addr[0].to_s
-              temp_subnets = %x[ping -c 10  #{addr[0].to_s}]
-              subnets += temp_subnets.scan(/([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\.[0-9]{1,3}/).uniq
-            end
-            puts "Broadcast done"
-          rescue Exception => ex
-            puts "Skipping ping broadcast."
-          end
-
-          begin
-            nmap_available = %x[nmap -h]
-            puts "Forcing ARP to refresh. This assumes that your device is on the same local network as this computer."
-            subnets.uniq.each do |ip|
-              puts "Sending nmap broadcast on " + ip[0].to_s
-              %x[nmap -sP #{ip[0].to_s}0/24]
-
-              $ip_address_string = get_arp_table(mac_address)
-              if ($ip_address_string != "")
-                break
-              end
-            end
-            puts "Nmap broadcast done"
-          rescue Exception => ex
-            puts "Skipping nmap broadcast. Nmap is not installed. It can be downloaded from: https://nmap.org/download.html"
-            # Nmap not installed. Let's try arp before giving up
-            $ip_address_string = get_arp_table(mac_address)
-          end
-
-          raise "Could not retrieve IP. Please ensure that:\n1) Device is set to never sleep (General Settings-> Auto-Lock-> Never.\n2) Device is on the same network as this computer." if $ip_address_string == ""
-        end
-
-        #extract ip from string
-        new_ip_address = IPAddress::IPv4::extract $ip_address_string
+        puts "Launching getIP app"
+        install_app = %x[ios-deploy --justlaunch --bundle #{myApp}]
+        #Putting log into file
+        iplog = %x[(idevicesyslog) & sleep 5 ; kill $!]
+        File.write('iplog.txt', iplog)
+        #Getting ip from file
+        ip = %x[grep -m1 'IPAddress:' iplog.txt | awk '{print $8}']
+        File.delete('iplog.txt')
         #Replace value of udid
-        output_data['caps']['youiEngineAppAddress'] = new_ip_address.to_s
-        puts 'IP Address: ' + new_ip_address.to_s
-      end
+        output_data['caps']['youiEngineAppAddress'] = ip
+        puts 'IP Address: ' + ip
+    end
 
     rescue Exception => ex
       puts "An error of type #{ex.class} happened, message is #{ex.message}"
       exit
-    end
-
-    def get_arp_table(mac_address)
-
-      $i = 1
-      $num = 5
-      puts Time.now.strftime("%Y-%m-%d %H:%M:%S") + " Trying to get arp table. Try " + $i.to_s
-      begin
-        ip_address_string = %x[arp -a | egrep #{mac_address}]
-        $i +=1
-        raise "" if (ip_address_string == "")
-        return ip_address_string
-      rescue
-        if ($i <= $num)
-          sleep_increment = 15
-          sleep_time = sleep_increment*(1)
-          puts Time.now.strftime("%Y-%m-%d %H:%M:%S") + " Try "+ $i.to_s + ". Sleeping " + sleep_time.to_s + " seconds before next arp attempt."
-          sleep sleep_time
-          retry
-        else
-
-          return ""
-
-        end
-      end
     end
 
     def write_caps(caps_file_name, output_data)

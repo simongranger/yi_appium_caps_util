@@ -12,14 +12,16 @@ youiEngineAppAddress will be updated using `adb shell ifconfig wlan0`
 
 ## iOS ##
 ### udid ###
-udid will be updated using `instruments -s devices`
+udid will be updated using `idevice_id -l`
 ### youiEngineAppAddress ###
-youiEngineAppAddress will be updated using `ideviceinfo -k WiFiAddress` and `arp -a`
+youiEngineAppAddress will be updated using `getIP.app`
 
 # How to Use #
 
 ## Dependencies Installation ##
   $ brew install libimobiledevice
+
+  $ brew install ios-deploy
 
   $ gem install ipaddress
 
