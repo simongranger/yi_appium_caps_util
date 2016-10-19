@@ -104,16 +104,27 @@ class YiAppiumCapsUtil
         %x[unzip -o #{myZipApp} -d #{myAppFolder}]
 
         puts "Launching getIP app"
-        install_app = %x[ios-deploy --justlaunch --bundle #{myApp}]
-        #Putting log into file
-        iplog = %x[(idevicesyslog) & sleep 5 ; kill $!]
-        File.write('iplog.txt', iplog)
-        #Getting ip from file
-        ip = %x[grep -m1 'IPAddress:' iplog.txt | awk '{print $8}']
+        #Launching app and putting (5 seconds of) log into file
+        ipcounter = 1
+        while ipcounter <= 5 do
+          puts "Try \# #{ipcounter}"
+          iplog = %x[ios-deploy --justlaunch --bundle #{myApp} & (idevicesyslog) & sleep 5 ; kill $!]
+          File.write('iplog.txt', iplog)
+          #Getting ip from file
+          ip = %x[grep -m1 'IPAddress:' iplog.txt | awk '{print $8}']
+          #Remove whitespace
+          ip = ip.strip
+          puts 'IP Address: ' + ip
+          if (ip == "")
+            ipcounter +=1
+          else
+            #Found it!  
+            ipcounter = 999
+          end
+        end
         File.delete('iplog.txt')
         #Replace value of udid
         output_data['caps']['youiEngineAppAddress'] = ip
-        puts 'IP Address: ' + ip
     end
 
     rescue Exception => ex
