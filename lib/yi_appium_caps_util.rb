@@ -6,7 +6,6 @@ class YiAppiumCapsUtil
   class << self
     public
     def update (caps_file_name = './appium.txt')
-
       raise "appium.txt file is missing" if not File.file?(caps_file_name)
 
       #Read capability file
@@ -22,6 +21,13 @@ class YiAppiumCapsUtil
       else
         puts 'caps have not changed'
       end
+    end
+
+    def create (platform_name)
+      File.open("./appium.txt","w") do |f|
+        f.puts("[caps]\napp = \" \"\nautomationName = \"YouiEngine\"\ndeviceName = \" \"\nplatformName = \"#{platform_name}\"\nyouiEngineAppAddress = \" \"\n")
+      end
+      update()
     end
 
     private

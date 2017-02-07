@@ -9,10 +9,13 @@ options = {}
 
 OptionParser.new do |opts|
   opts.banner = "You.i Utility for appium.txt capabilities"
-  puts opts.banner
+  # puts opts.banner
 
   opts.on("-u", "--update", "update device ID and IP address") do
     options[:update] = true
+  end
+  opts.on("-cPLATFORM", "--create PLATFORM", "creates the appium.txt file for specefied platform") do |c|
+    options[:create_caps] = c
   end
   opts.on("-fFILE", "--file FILE", "capabilities path and file name (default: ./appium.txt)") do |f|
     options[:file] = f
@@ -23,10 +26,16 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-if options[:update] == true
-  if options[:file] == nil
-    YiAppiumCapsUtil.update
-  else
+raise "You should pass -u or -c PLATFORM as an input argument. Type -h for help" if options[:update] == nil and options[:create_caps] == nil
+
+if options[:update]
+  if options[:file]
     YiAppiumCapsUtil.update(options[:file])
+  else
+    YiAppiumCapsUtil.update
   end
+end
+
+if options[:create_caps]
+  YiAppiumCapsUtil.create(options[:create_caps].downcase)
 end
