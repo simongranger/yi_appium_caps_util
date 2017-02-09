@@ -24,8 +24,14 @@ class YiAppiumCapsUtil
     end
 
     def create (platform_name)
+      template = {"caps"=>{"app"=>"",
+      "automationName"=>"YouiEngine",
+      "deviceName"=>"",
+      "platformName"=>"#{platform_name}",
+      "youiEngineAppAddress"=>""}}
+
       File.open("./appium.txt","w") do |f|
-        f.puts("[caps]\napp = \" \"\nautomationName = \"YouiEngine\"\ndeviceName = \" \"\nplatformName = \"#{platform_name}\"\nyouiEngineAppAddress = \" \"\n")
+        f.puts(TOML::Generator.new(template).body)
       end
       update()
     end
