@@ -26,7 +26,7 @@ class YiAppiumCapsUtil
     def create (platform_name)
       template = {"caps"=>{"app"=>"",
       "automationName"=>"YouiEngine",
-      "deviceName"=>"",
+      "deviceName"=>"DeviceName",
       "platformName"=>"#{platform_name}",
       "youiEngineAppAddress"=>""}}
 
@@ -135,8 +135,13 @@ class YiAppiumCapsUtil
           end
         end
         File.delete('iplog.txt')
-        #Replace value of udid
-        output_data['caps']['youiEngineAppAddress'] = ip
+        #Replace value of ip if found
+        if (ip != '') then 
+          output_data['caps']['youiEngineAppAddress'] = ip 
+        else 
+          puts "Update ip address manually"
+        end
+        
     end
 
     rescue Exception => ex
