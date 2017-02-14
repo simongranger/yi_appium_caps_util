@@ -9,7 +9,7 @@ options = {}
 
 OptionParser.new do |opts|
   opts.banner = "You.i Utility for appium.txt capabilities"
-  # puts opts.banner
+  puts opts.banner
 
   opts.on("-u", "--update", "update device ID and IP address") do
     options[:update] = true
