@@ -109,21 +109,21 @@ class YiAppiumCapsUtil
       else
         puts 'Searching for IP, this may take a few seconds...'
 
-        #https://github.com/LorneFlindall/getIP
+        # uswish/Test/tools/getIOSIP
         myAppFolder = File.dirname(__FILE__) + "/../app/"
-        myApp = myAppFolder + "getIP.app"
-        myZipApp = myAppFolder + "getIP.app.zip"
-        %x[unzip -o #{myZipApp} -d #{myAppFolder}]
+        myApp = myAppFolder + "Payload/getIOSIP.app"
+        myZipApp = myAppFolder + "getIOSIP.zip"
+        %x[sudo unzip -o #{myZipApp} -d #{myAppFolder}]
 
         puts "Launching getIP app"
         #Launching app and putting (5 seconds of) log into file
         ipcounter = 1
         while ipcounter <= 5 do
           puts "Try \# #{ipcounter}"
-          iplog = %x[ios-deploy --justlaunch --bundle #{myApp} & (idevicesyslog) & sleep 5 ; kill $!]
-          File.write('iplog.txt', iplog)
+          logs = %x[ios-deploy --justlaunch --bundle #{myApp} & (idevicesyslog) & sleep 7 ; kill $!]
+          File.write('logs.txt', logs)
           #Getting ip from file
-          ip = %x[grep -m1 'IPAddress:' iplog.txt | awk '{print $8}']
+          ip = %x[grep -Eo "youiEngineAppAddress.*" logs.txt | head -1 | awk '{print $3}'| tr -d '"']
           #Remove whitespace
           ip = ip.strip
           puts 'IP Address: ' + ip
@@ -134,14 +134,26 @@ class YiAppiumCapsUtil
             ipcounter = 999
           end
         end
-        File.delete('iplog.txt')
+        # Get the device name before deleting the file
+        deviceName = %x[grep -Eo "deviceName =.*" logs.txt| head -1|cut -d " " -f 3-|tr -d '"'|tr -d '\n']
+        platformVersion = %x[grep -Eo "platformVersion =.*" logs.txt| head -1|awk '{print $3}'| tr -d '"']
+        puts 'DeviceName: ' + deviceName
+        puts 'platformVersion: ' + platformVersion
+        File.delete('logs.txt')
         #Replace value of ip if found
         if (ip != '') then 
           output_data['caps']['youiEngineAppAddress'] = ip 
         else 
           puts "Update ip address manually"
         end
-        
+        output_data['caps']['deviceName'] = deviceName
+
+        # Add the xcodeConfigFile in the caps if dealing with iOS 10+
+        if (platformVersion.to_f>=10) then
+          output_data['caps']['xcodeConfigFile'] = './youi.xcconfig'
+          temp = "DEVELOPMENT_TEAM = W4E9HL2DXS\nCODE_SIGN_IDENTITY = iPhone Developer\n"
+          File.write('youi.xcconfig', temp)
+        end
     end
 
     rescue Exception => ex

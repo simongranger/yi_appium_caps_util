@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.description = "Updates real device caps: device ID and IP for Android & iOS"
   s.authors     = ["Simon Granger","Mohamed Maamoun", "Tamimi Ahmad"]
   s.email       = 'simon.granger@youi.tv'
-  s.files       = ["lib/yi_appium_caps_util.rb", "app/getIP.app.zip"]
+  s.files       = ["lib/yi_appium_caps_util.rb", "app/getIOSIP.zip"]
   s.homepage    =
     'https://github.com/YOU-i-Labs/yi_appium_caps_util'
   s.license       = 'MIT'
