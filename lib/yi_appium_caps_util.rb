@@ -136,7 +136,7 @@ class YiAppiumCapsUtil
         end
         # Get the device name before deleting the file
         deviceName = %x[grep -Eo "deviceName =.*" logs.txt| head -1|cut -d " " -f 3-|tr -d '"'|tr -d '\n']
-        platformVersion = %x[grep -Eo "platformVersion =.*" logs.txt| head -1|awk '{print $3}'| tr -d '"']
+        platformVersion = %x[grep -Eo "platformVersion =.*" logs.txt| head -1|awk '{print $3}'| tr -d '"'|tr -d '\n']
         puts 'DeviceName: ' + deviceName
         puts 'platformVersion: ' + platformVersion
         File.delete('logs.txt')
@@ -147,10 +147,13 @@ class YiAppiumCapsUtil
           puts "Update ip address manually"
         end
         output_data['caps']['deviceName'] = deviceName
+        output_data['caps']['platformVersion'] = platformVersion
 
         # Add the xcodeConfigFile in the caps if dealing with iOS 10+
         if (platformVersion.to_f>=10) then
           output_data['caps']['xcodeConfigFile'] = './youi.xcconfig'
+          # NewWDA: Forces uninstall of any existing WebDriverAgent app on device. This provides stability.
+          output_data['caps']['useNewWDA'] = true
           temp = "DEVELOPMENT_TEAM = W4E9HL2DXS\nCODE_SIGN_IDENTITY = iPhone Developer\n"
           File.write('youi.xcconfig', temp)
         end
