@@ -1,6 +1,6 @@
 # yi_appium_caps_util
 
-This gem is meant to help simplify the updating of your existing appium.txt files
+This gem is meant to help create and/or update the appium.txt file.
 
 # Supported platforms #
 
@@ -14,7 +14,7 @@ youiEngineAppAddress will be updated using `adb shell ifconfig wlan0`
 ### udid ###
 udid will be updated using `idevice_id -l`
 ### youiEngineAppAddress ###
-youiEngineAppAddress will be updated using `getIP.app`
+youiEngineAppAddress will be updated using `getiOSIP.app`
 
 # How to Use #
 
@@ -33,3 +33,4 @@ youiEngineAppAddress will be updated using `getIP.app`
 ## Running ##
 `yi_appium_caps_util -u` if appium.txt is in your local folder
 `yi_appium_caps_util -u -f *path/file*` to define the path/filename
+`yi_appium_caps_util -c platform` to create the appium.txt file. Note: use `ios` or `android` for platform
