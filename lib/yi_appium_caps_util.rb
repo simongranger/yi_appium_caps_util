@@ -149,12 +149,20 @@ class YiAppiumCapsUtil
         output_data['caps']['deviceName'] = deviceName
         output_data['caps']['platformVersion'] = platformVersion
 
+        xcodeBuildVersion = %x[xcodebuild -version | head -1 | awk '{print $2}']
+
         # Add the xcodeConfigFile in the caps if dealing with iOS 10+
         if (platformVersion.to_f>=10) then
           output_data['caps']['xcodeOrgId'] = 'W4E9HL2DXS'
           output_data['caps']['xcodeSigningId'] = 'iPhone Developer'
           # NewWDA: Forces uninstall of any existing WebDriverAgent app on device. This provides stability.
           output_data['caps']['useNewWDA'] = true
+          # Confirm xcode command line tools > xcode 7
+          if (xcodeBuildVersion.to_f<8) then
+            puts "Change to xcode version higher than xcode 7! Current version is: "+xcodeBuildVersion
+          end
+        elsif (xcodeBuildVersion.to_f>8) then
+            puts "Change to xcode version to xcode 7! Current version is: "+xcodeBuildVersion
         end
     end
 
