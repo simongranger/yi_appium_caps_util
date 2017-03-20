@@ -1,6 +1,7 @@
 require "ipaddress"
 require 'socket'
 require 'toml'
+require 'shellwords'
 
 class YiAppiumCapsUtil
   class << self
@@ -37,6 +38,22 @@ class YiAppiumCapsUtil
     end
 
     private
+
+    # Helper function used in creating ios specefic caps
+    def getTeamID()
+      path = "/Library/MobileDevice/Provisioning Profiles".shellescape
+      `ln -s ~#{path} ./temp`
+      Dir.foreach("./temp/") do |fname|
+        next if fname == '.' or fname == '..'
+        matches = open('./temp/'+fname) { |f| f.each_line.find { |line| line.include?("TeamIdentifier") } }
+        if matches then
+          s = IO.binread('./temp/'+fname)
+          teamID = s.match(/TeamIdentifier(.*)TeamName/m)[1].match(/string(.*)string/m)[1].match(/>(.*)</m)[1]
+          `rm -fr ./temp`
+          return teamID
+        end
+      end
+    end
 
     def run_update(parsed_data)
       #Make a copy of the parsed data
@@ -113,7 +130,7 @@ class YiAppiumCapsUtil
         myAppFolder = File.dirname(__FILE__) + "/../app/"
         myApp = myAppFolder + "Payload/getIOSIP.app"
         myZipApp = myAppFolder + "getIOSIP.zip"
-        %x[sudo unzip -o #{myZipApp} -d #{myAppFolder}]
+        %x[unzip -o #{myZipApp} -d #{myAppFolder}]
 
         puts "Launching getIP app"
         #Launching app and putting (5 seconds of) log into file
@@ -153,7 +170,7 @@ class YiAppiumCapsUtil
 
         # Add the xcodeConfigFile in the caps if dealing with iOS 10+
         if (platformVersion.to_f>=10) then
-          output_data['caps']['xcodeOrgId'] = 'W4E9HL2DXS'
+          output_data['caps']['xcodeOrgId'] = getTeamID()
           # NewWDA: Forces uninstall of any existing WebDriverAgent app on device. This provides stability.
           output_data['caps']['useNewWDA'] = true
           # Confirm xcode command line tools > xcode 7
