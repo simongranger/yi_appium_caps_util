@@ -1,12 +1,12 @@
 require "ipaddress"
 require 'socket'
 require 'toml'
+require 'shellwords'
 
 class YiAppiumCapsUtil
   class << self
     public
     def update (caps_file_name = './appium.txt')
-
       raise "appium.txt file is missing" if not File.file?(caps_file_name)
 
       #Read capability file
@@ -24,7 +24,36 @@ class YiAppiumCapsUtil
       end
     end
 
+    def create (platform_name)
+      template = {"caps"=>{"app"=>"",
+      "automationName"=>"YouiEngine",
+      "deviceName"=>"DeviceName",
+      "platformName"=>"#{platform_name}",
+      "youiEngineAppAddress"=>""}}
+
+      File.open("./appium.txt","w") do |f|
+        f.puts(TOML::Generator.new(template).body)
+      end
+      update()
+    end
+
     private
+
+    # Helper function used in creating ios specefic caps
+    def getTeamID()
+      path = "/Library/MobileDevice/Provisioning Profiles".shellescape
+      `ln -s ~#{path} ./temp`
+      Dir.foreach("./temp/") do |fname|
+        next if fname == '.' or fname == '..'
+        matches = open('./temp/'+fname) { |f| f.each_line.find { |line| line.include?("TeamIdentifier") } }
+        if matches then
+          s = IO.binread('./temp/'+fname)
+          teamID = s.match(/TeamIdentifier(.*)TeamName/m)[1].match(/string(.*)string/m)[1].match(/>(.*)</m)[1]
+          `rm -fr ./temp`
+          return teamID
+        end
+      end
+    end
 
     def run_update(parsed_data)
       #Make a copy of the parsed data
@@ -97,10 +126,10 @@ class YiAppiumCapsUtil
       else
         puts 'Searching for IP, this may take a few seconds...'
 
-        #https://github.com/LorneFlindall/getIP
+        # uswish/Test/tools/getIOSIP
         myAppFolder = File.dirname(__FILE__) + "/../app/"
-        myApp = myAppFolder + "getIP.app"
-        myZipApp = myAppFolder + "getIP.app.zip"
+        myApp = myAppFolder + "Payload/getIOSIP.app"
+        myZipApp = myAppFolder + "getIOSIP.zip"
         %x[unzip -o #{myZipApp} -d #{myAppFolder}]
 
         puts "Launching getIP app"
@@ -108,10 +137,10 @@ class YiAppiumCapsUtil
         ipcounter = 1
         while ipcounter <= 5 do
           puts "Try \# #{ipcounter}"
-          iplog = %x[ios-deploy --justlaunch --bundle #{myApp} & (idevicesyslog) & sleep 5 ; kill $!]
-          File.write('iplog.txt', iplog)
+          logs = %x[ios-deploy --justlaunch --bundle #{myApp} & (idevicesyslog) & sleep 7 ; kill $!]
+          File.write('logs.txt', logs)
           #Getting ip from file
-          ip = %x[grep -m1 'IPAddress:' iplog.txt | awk '{print $8}']
+          ip = %x[grep -Eo "youiEngineAppAddress.*" logs.txt | head -1 | awk '{print $3}'| tr -d '"']
           #Remove whitespace
           ip = ip.strip
           puts 'IP Address: ' + ip
@@ -122,9 +151,35 @@ class YiAppiumCapsUtil
             ipcounter = 999
           end
         end
-        File.delete('iplog.txt')
-        #Replace value of udid
-        output_data['caps']['youiEngineAppAddress'] = ip
+        # Get the device name before deleting the file
+        deviceName = %x[grep -Eo "deviceName =.*" logs.txt| head -1|cut -d " " -f 3-|tr -d '"'|tr -d '\n']
+        platformVersion = %x[grep -Eo "platformVersion =.*" logs.txt| head -1|awk '{print $3}'| tr -d '"'|tr -d '\n']
+        puts 'DeviceName: ' + deviceName
+        puts 'platformVersion: ' + platformVersion
+        File.delete('logs.txt')
+        #Replace value of ip if found
+        if (ip != '') then 
+          output_data['caps']['youiEngineAppAddress'] = ip 
+        else 
+          puts "Update ip address manually"
+        end
+        output_data['caps']['deviceName'] = deviceName
+        output_data['caps']['platformVersion'] = platformVersion
+
+        xcodeBuildVersion = %x[xcodebuild -version | head -1 | awk '{print $2}']
+
+        # Add the xcodeConfigFile in the caps if dealing with iOS 10+
+        if (platformVersion.to_f>=10) then
+          output_data['caps']['xcodeOrgId'] = getTeamID()
+          # NewWDA: Forces uninstall of any existing WebDriverAgent app on device. This provides stability.
+          output_data['caps']['useNewWDA'] = true
+          # Confirm xcode command line tools > xcode 7
+          if (xcodeBuildVersion.to_f<8) then
+            puts "Change to xcode version higher than xcode 7! Current version is: "+xcodeBuildVersion
+          end
+        elsif (xcodeBuildVersion.to_f>8) then
+            puts "Change to xcode version to xcode 7! Current version is: "+xcodeBuildVersion
+        end
     end
 
     rescue Exception => ex
