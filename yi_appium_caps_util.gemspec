@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'yi_appium_caps_util'
-  s.version     = '1.0.0'
+  s.version     = '1.0.1'
   s.executables << 'yi_appium_caps_util'
   s.date        = '2017-02-10'
   s.summary     = "Updates your appium.txt capabilities"
