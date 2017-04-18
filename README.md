@@ -1,3 +1,4 @@
+[![Gem Version](https://badge.fury.io/rb/yi_appium_caps_util.svg)](https://badge.fury.io/rb/yi_appium_caps_util)
 # yi_appium_caps_util
 
 This gem is meant to help create and/or update the appium.txt file.
@@ -31,6 +32,6 @@ youiEngineAppAddress will be updated using `getiOSIP.app`
   $ gem install yi_appium_caps_util  
 
 ## Running ##
-`yi_appium_caps_util -u` if appium.txt is in your local folder
-`yi_appium_caps_util -u -f *path/file*` to define the path/filename
-`yi_appium_caps_util -c platform` to create the appium.txt file. Note: use `ios` or `android` for platform
+* `yi_appium_caps_util -u` if appium.txt is in your local folder
+* `yi_appium_caps_util -u -f *path/file*` to define the path/filename
+* `yi_appium_caps_util -c platform` to create the appium.txt file. Note: use `ios` or `android` for platform
