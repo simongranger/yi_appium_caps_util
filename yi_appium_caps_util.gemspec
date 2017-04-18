@@ -3,8 +3,8 @@ Gem::Specification.new do |s|
   s.version     = '1.0.1'
   s.executables << 'yi_appium_caps_util'
   s.date        = '2017-02-10'
-  s.summary     = "Updates your appium.txt capabilities"
-  s.description = "Updates real device caps: device ID and IP for Android & iOS"
+  s.summary     = "Updates your appium.txt capabilities for iOS and Android"
+  s.description = "This utility updates the caps for iOS and Android devices. Please refer to homepage for ruther details on usage"
   s.authors     = ["Simon Granger","Mohamed Maamoun", "Tamimi Ahmad"]
   s.email       = 'simon.granger@youi.tv'
   s.files       = ["lib/yi_appium_caps_util.rb", "app/getIOSIP.zip"]
