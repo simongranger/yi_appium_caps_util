@@ -1,7 +1,7 @@
 [![Gem Version](https://badge.fury.io/rb/yi_appium_caps_util.svg)](https://badge.fury.io/rb/yi_appium_caps_util)
 # yi_appium_caps_util
 
-This gem is meant to help create and/or update the appium.txt file.
+This gem is meant to help create and/or update the appium.txt file. Note that a prerequisite to using this gem is to have the device connected to the machine.
 
 # Supported platforms #
 
