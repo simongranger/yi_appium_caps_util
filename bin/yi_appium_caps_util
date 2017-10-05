@@ -30,8 +30,15 @@ end.parse!
 raise "You should pass -u or -c PLATFORM as an input argument. Type -h for help" if options[:update] == nil and options[:create_caps] == nil
 
 if options[:update]
+  if options[:file] && options[:platform]
     YiAppiumCapsUtil.update(caps_file_name: options[:file], platformName_value: options[:platform])
-  end
+  elsif options[:file]
+    YiAppiumCapsUtil.update(caps_file_name: options[:file])
+  elsif options[:platform]
+    YiAppiumCapsUtil.update(platformName_value: options[:platform])
+  else
+    YiAppiumCapsUtil.update
+  end    
 end
 
 if options[:create_caps]
