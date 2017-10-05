@@ -6,14 +6,14 @@ require 'shellwords'
 class YiAppiumCapsUtil
   class << self
     public
-    def update (caps_file_name = './appium.txt')
+    def update (caps_file_name: './appium.txt', platformName_value: nil)
       raise "appium.txt file is missing" if not File.file?(caps_file_name)
 
       #Read capability file
       parsed_data = TOML.load_file(caps_file_name)
 
       #Update caps
-      output_data = run_update(parsed_data)
+      output_data = run_update(parsed_data, platformName_value: platformName_value)
 
       #Save the file if caps have changed
       if (output_data != parsed_data)
@@ -55,27 +55,30 @@ class YiAppiumCapsUtil
       end
     end
 
-    def run_update(parsed_data)
+    def run_update(parsed_data, platformName_value: nil)
       #Make a copy of the parsed data
       output_data = Marshal.load(Marshal.dump(parsed_data))
 
       if parsed_data['caps'] == nil
         raise '[caps] is missing form appium.txt'
-      else
+      end
+      
+      if platformName_value == nil
+        #If platformName_value was not passed as a parameter, 
+        # we'll try to extract it from the caps
         platformName_value = parsed_data['caps']['platformName']
-
         if platformName_value == nil
           raise 'platformName is missing from appium.txt'
-        else
-          case platformName_value.downcase
-          when 'android'
-            update_android_caps (output_data)
-          when 'ios'
-            update_ios_caps (output_data)
-          else
-            raise 'platformName: ' + platformName_value + ' is not supported'
-          end
         end
+      end
+      
+      case platformName_value.downcase
+      when 'android'
+        update_android_caps (output_data)
+      when 'ios'
+        update_ios_caps (output_data)
+      else
+        raise 'platformName: ' + platformName_value + ' is not supported'
       end
       return output_data
     end
@@ -171,8 +174,6 @@ class YiAppiumCapsUtil
         # Add the xcodeConfigFile in the caps if dealing with iOS 10+
         if (platformVersion.to_f>=10) then
           output_data['caps']['xcodeOrgId'] = getTeamID()
-          # NewWDA: Forces uninstall of any existing WebDriverAgent app on device. This provides stability.
-          output_data['caps']['useNewWDA'] = true
           # Confirm xcode command line tools > xcode 7
           if (xcodeBuildVersion.to_f<8) then
             puts "Change to xcode version higher than xcode 7! Current version is: "+xcodeBuildVersion
