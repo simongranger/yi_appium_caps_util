@@ -1,8 +1,8 @@
 Gem::Specification.new do |s|
   s.name        = 'yi_appium_caps_util'
-  s.version     = '1.0.4'
+  s.version     = '1.0.5'
   s.executables << 'yi_appium_caps_util'
-  s.date        = '2017-10-05'
+  s.date        = '2017-11-21'
   s.summary     = "Updates your appium.txt capabilities for iOS and Android"
   s.description = "This utility updates the caps for iOS and Android devices. Please refer to homepage for ruther details on usage"
   s.authors     = ["Simon Granger","Mohamed Maamoun", "Tamimi Ahmad"]
