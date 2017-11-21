@@ -113,7 +113,7 @@ class YiAppiumCapsUtil
     def update_ios_caps (output_data)
       puts 'Looking for iOS device'
       #Get the device UDID
-      new_udid = %x[idevice_id -l]
+      new_udid = %x[idevice_id -l | awk ' NR < 2']
       #Remove whitespace
       new_udid = new_udid.strip
 
