@@ -77,6 +77,10 @@ class YiAppiumCapsUtil
         update_android_caps (output_data)
       when 'ios'
         update_ios_caps (output_data)
+      when 'mac'
+        update_mac_caps (output_data)
+      when 'yimac'
+        update_mac_caps (output_data)
       else
         raise 'platformName: ' + platformName_value + ' is not supported'
       end
@@ -102,12 +106,10 @@ class YiAppiumCapsUtil
       #Replace value of youiEngineAppAddress
       output_data['caps']['youiEngineAppAddress'] = new_address[0]
       puts 'IP address: ' + new_address[0]
-    rescue RuntimeError => ex
-      puts ex.message
-      raise
-    rescue Exception => ex
-      puts "An error of type #{ex.class} happened, message is #{ex.message}"
-      raise
+      #Add fullReset to have app reinstalled between runs
+      output_data['caps']['fullReset'] = true
+    rescue Exception, RuntimeError => ex
+      raise "An error of type #{ex.class} happened, message is #{ex.message}"
     end
 
     def update_ios_caps (output_data)
@@ -181,11 +183,18 @@ class YiAppiumCapsUtil
         elsif (xcodeBuildVersion.to_f>8) then
             puts "Change to xcode version to xcode 7! Current version is: "+xcodeBuildVersion
         end
+      end  
+    rescue Exception, RuntimeError => ex
+      raise "An error of type #{ex.class} happened, message is #{ex.message}"
     end
 
-    rescue Exception => ex
-      puts "An error of type #{ex.class} happened, message is #{ex.message}"
-      exit
+    def update_mac_caps (output_data)
+      #Replace value of deviceName
+      output_data['caps']['deviceName'] = "macOS device"
+      #Replace value of youiEngineAppAddress
+      output_data['caps']['youiEngineAppAddress'] = "localhost"
+    rescue Exception, RuntimeError => ex
+      raise "An error of type #{ex.class} happened, message is #{ex.message}"
     end
 
     def write_caps(caps_file_name, output_data)
