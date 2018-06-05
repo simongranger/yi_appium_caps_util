@@ -24,12 +24,27 @@ class YiAppiumCapsUtil
       end
     end
 
-    def create (platform_name)
+    def create (platform_name, form_factor)
+      form_factors = ["handheld", "tablet", "10foot"]
+      
+      found = false
+      form_factors.each do |i|
+        if i == form_factor
+          found = true
+        end
+      end
+
+      if found == false
+        puts "ERROR: formFactor: '#{form_factor}' is not supported (#{form_factors})"
+        exit
+      end
+      
       template = {"caps"=>{"app"=>"",
       "automationName"=>"YouiEngine",
       "deviceName"=>"DeviceName",
       "platformName"=>"#{platform_name}",
-      "youiEngineAppAddress"=>""}}
+      "youiEngineAppAddress"=>""},
+      "parameters"=>{"formFactor"=>"#{form_factor}"}}
 
       File.open("./appium.txt","w") do |f|
         f.puts(TOML::Generator.new(template).body)
@@ -82,7 +97,8 @@ class YiAppiumCapsUtil
       when 'yimac'
         update_mac_caps (output_data)
       else
-        raise 'platformName: ' + platformName_value + ' is not supported'
+        puts "ERROR: platformName '#{platformName_value}' is not supported"
+        exit
       end
       return output_data
     end
