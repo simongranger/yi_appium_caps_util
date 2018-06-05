@@ -11,15 +11,18 @@ OptionParser.new do |opts|
   opts.banner = "You.i Utility for appium.txt capabilities"
   puts opts.banner
 
-  opts.on("-u", "--update [PLATFORM]", "update device ID and IP address") do |p|
-    options[:update] = true
-    options[:platform] = p
-  end
   opts.on("-cPLATFORM", "--create PLATFORM", "creates the appium.txt file for specified platform") do |c|
     options[:create_caps] = c
   end
   opts.on("-fFILE", "--file FILE", "capabilities path and file name (default: ./appium.txt)") do |f|
     options[:file] = f
+  end
+  opts.on("-u", "--update [PLATFORM]", "update device ID and IP address") do |p|
+    options[:update] = true
+    options[:platform] = p
+  end
+  opts.on("-xFORMFACTOR", "--formfactor FORMFACTOR", "update the form factor") do |x|
+    options[:form_factor] = x
   end
   opts.on("-h", "--help", "Prints this help") do
     puts opts
@@ -27,7 +30,10 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-raise "You should pass -u or -c PLATFORM as an input argument. Type -h for help" if options[:update] == nil and options[:create_caps] == nil
+if options[:update] == nil and options[:create_caps] == nil
+  puts "You should pass -u or -c PLATFORM as an input argument. Type -h for help"
+  exit
+end
 
 if options[:update]
   if options[:file] && options[:platform]
@@ -42,5 +48,9 @@ if options[:update]
 end
 
 if options[:create_caps]
-  YiAppiumCapsUtil.create(options[:create_caps].downcase)
+  if options[:create_caps] && options[:form_factor]
+    YiAppiumCapsUtil.create(options[:create_caps].downcase, options[:form_factor].downcase)
+  elsif options[:create_caps]
+    YiAppiumCapsUtil.create(options[:create_caps].downcase, "handheld")
+  end
 end
