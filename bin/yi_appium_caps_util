@@ -10,6 +10,8 @@ options = {}
 OptionParser.new do |opts|
   opts.banner = "You.i Utility for appium.txt capabilities"
   puts opts.banner
+  platforms = "Supported platforms: ios, android, mac, yimac, yitvos"
+  puts platforms
 
   opts.on("-cPLATFORM", "--create PLATFORM", "creates the appium.txt file for specified platform") do |c|
     options[:create_caps] = c

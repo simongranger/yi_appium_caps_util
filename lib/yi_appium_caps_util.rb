@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 require "ipaddress"
 require 'socket'
 require 'toml'
@@ -54,7 +55,7 @@ class YiAppiumCapsUtil
 
     private
 
-    # Helper function used in creating ios specefic caps
+    # Helper function used in creating ios specific caps
     def getTeamID()
       path = "/Library/MobileDevice/Provisioning Profiles".shellescape
       `ln -s ~#{path} ./temp`
@@ -96,6 +97,8 @@ class YiAppiumCapsUtil
         update_mac_caps (output_data)
       when 'yimac'
         update_mac_caps (output_data)
+      when 'yitvos'
+        update_tvos_caps (output_data)
       else
         puts "ERROR: platformName '#{platformName_value}' is not supported"
         exit
@@ -156,9 +159,11 @@ class YiAppiumCapsUtil
         puts "Launching getIP app"
         #Launching app and putting (5 seconds of) log into file
         ipcounter = 1
+        sleepSec = 7
         while ipcounter <= 5 do
           puts "Try \# #{ipcounter}"
-          logs = %x[ios-deploy --justlaunch --bundle #{myApp} & (idevicesyslog) & sleep 7 ; kill $!]
+          puts "Sleep: #{sleepSec} secs"
+          logs = %x[ios-deploy --justlaunch --bundle #{myApp} & (idevicesyslog) & sleep #{sleepSec} ; kill $!]
           File.write('logs.txt', logs)
           #Getting ip from file
           ip = %x[grep -Eo "youiEngineAppAddress.*" logs.txt | head -1 | awk '{print $3}'| tr -d '"']
@@ -167,9 +172,10 @@ class YiAppiumCapsUtil
           puts 'IP Address: ' + ip
           if (ip == "")
             ipcounter +=1
+            sleepSec +=5
           else
             #Found it!  
-            ipcounter = 999
+            break
           end
         end
         # Get the device name before deleting the file
@@ -209,6 +215,57 @@ class YiAppiumCapsUtil
       output_data['caps']['deviceName'] = "macOS device"
       #Replace value of youiEngineAppAddress
       output_data['caps']['youiEngineAppAddress'] = "localhost"
+    rescue Exception, RuntimeError => ex
+      raise "An error of type #{ex.class} happened, message is #{ex.message}"
+    end
+
+    def update_tvos_caps (output_data)
+      #Replace value of deviceName
+      output_data['caps']['deviceName'] = "Apple TV"
+      output_data['parameters']['formFactor'] = "10foot"
+
+      if (output_data['caps']['skipYouiEngineAppAddress'] != nil)
+        puts
+        puts 'Skiping IP check since skipYouiEngineAppAddress is present in appium.txt'
+      else
+        puts 'Searching for IP, this may take a few seconds...'
+
+        # uswish/Test/tools/getIOSIP
+        myAppFolder = File.dirname(__FILE__) + "/../app/"
+        myApp = myAppFolder + "getIP.app"
+        myZipApp = myAppFolder + "getIP-tvOS.zip"
+        %x[unzip -o #{myZipApp} -d #{myAppFolder}]
+
+        puts "Launching getIP app"
+        #Launching app and putting (5 seconds of) log into file
+        ipcounter = 1
+        sleepSec = 7
+        while ipcounter <= 5 do
+          puts "Try \# #{ipcounter}"
+          puts "Sleep: #{sleepSec} sec"
+          logs = %x[ios-deploy --justlaunch --bundle #{myApp} & (idevicesyslog) & sleep #{sleepSec} ; kill $!]
+          File.write('logs.txt', logs)
+          #Getting ip from file
+          ip = %x[grep -Eo "IPAddress.*" logs.txt | head -1 | awk '{print $3}'| tr -d '"']
+          #Remove whitespace
+          ip = ip.strip
+          puts 'IP Address: ' + ip
+          if (ip == "")
+            ipcounter +=1
+            sleepSec +=5
+          else
+            #Found it!
+            break
+          end
+        end
+        File.delete('logs.txt')
+        #Replace value of ip if found
+        if (ip != '') then
+          output_data['caps']['youiEngineAppAddress'] = ip
+        else
+          puts "Update ip address manually"
+        end
+      end
     rescue Exception, RuntimeError => ex
       raise "An error of type #{ex.class} happened, message is #{ex.message}"
     end

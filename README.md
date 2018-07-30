@@ -17,6 +17,15 @@ udid will be updated using `idevice_id -l`
 ### youiEngineAppAddress ###
 youiEngineAppAddress will be updated using `getiOSIP.app`
 
+## macOS ##
+### youiEngineAppAddress ###
+youiEngineAppAddress will be set to `localhost`
+
+## tvOS ##
+### youiEngineAppAddress ###
+youiEngineAppAddress will be updated using `getiOSIP.app`
+
+
 # How to Use #
 
 ## Dependencies Installation ##
@@ -34,4 +43,4 @@ youiEngineAppAddress will be updated using `getiOSIP.app`
 ## Running ##
 * `yi_appium_caps_util -u` if appium.txt is in your local folder
 * `yi_appium_caps_util -u -f *path/file*` to define the path/filename
-* `yi_appium_caps_util -c platform` to create the appium.txt file. Note: use `ios` or `android` for platform
+* `yi_appium_caps_util -c platform` to create the appium.txt file.

@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 require "ipaddress"
 require 'minitest/autorun'
 require 'yi_appium_caps_util'
